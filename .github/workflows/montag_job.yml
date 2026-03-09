@@ -1,0 +1,32 @@
+name: JSG Spielplan Generator
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Montag 07:00 deutscher Zeit ungefähr
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+
+      - name: Python installieren
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Abhängigkeiten installieren
+        run: |
+          pip install requests pillow pandas
+
+      - name: Generator starten
+        run: |
+          python generator.py
+
+      - name: Ergebnisse speichern
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Automatischer Spielplan und Ergebnisse"
