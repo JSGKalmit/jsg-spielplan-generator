@@ -1,72 +1,38 @@
+import requests
 import datetime
-import json
 import os
 
-print("JSG Kalmit Generator gestartet")
+print("JSG Kalmit Spielplan Generator gestartet")
 
-# heutiges Datum
+# Vereins-ID von fussball.de
+VEREIN_ID = "00ES8GNBC800007OVV0AG08LVUPGND5I"
+
+# Zeitraum bestimmen
 today = datetime.date.today()
+start = today - datetime.timedelta(days=7)
+end = today + datetime.timedelta(days=7)
 
-print("Heute:", today)
+print("Zeitraum:", start, "-", end)
 
-# Beispielspiele (Test)
+# Beispiel API (wird später erweitert)
+url = f"https://www.fussball.de/api/club/matches/{VEREIN_ID}"
+
+try:
+    r = requests.get(url)
+    print("API Status:", r.status_code)
+except:
+    print("Daten konnten noch nicht geladen werden")
+
+# Testdaten solange API noch nicht genutzt wird
 spiele = [
-    {
-        "datum": "09.03",
-        "team": "JSG C",
-        "gegner": "Seebach",
-        "zeit": "18:30",
-        "ort": "St. Martin",
-        "typ": "spielplan"
-    },
-    {
-        "datum": "14.03",
-        "team": "JSG E1",
-        "gegner": "Hassloch",
-        "zeit": "11:00",
-        "ort": "Hassloch",
-        "typ": "spielplan"
-    },
-    {
-        "datum": "07.03",
-        "team": "JSG B",
-        "gegner": "Landau",
-        "ergebnis": "3:1",
-        "typ": "ergebnis"
-    }
+    {"datum":"09.03","team":"JSG C","gegner":"Seebach","zeit":"18:30","ort":"St. Martin"},
+    {"datum":"14.03","team":"JSG E1","gegner":"Hassloch","zeit":"11:00","ort":"Hassloch"}
 ]
 
-print("Gefundene Spiele:", len(spiele))
-
-spielplan = []
-ergebnisse = []
-
-for spiel in spiele:
-
-    if spiel["typ"] == "spielplan":
-        spielplan.append(spiel)
-
-    if spiel["typ"] == "ergebnis":
-        ergebnisse.append(spiel)
-
-print("Spielplan Spiele:", len(spielplan))
-print("Ergebnis Spiele:", len(ergebnisse))
-
-# Ausgabe Dateien erstellen
 os.makedirs("output", exist_ok=True)
 
-with open("output/spielplan.txt", "w") as f:
-    for s in spielplan:
+with open("output/spielplan.txt","w") as f:
+    for s in spiele:
         f.write(f'{s["datum"]} {s["team"]} vs {s["gegner"]} {s["zeit"]} {s["ort"]}\n')
 
-with open("output/ergebnisse.txt", "w") as f:
-    for s in ergebnisse:
-        f.write(f'{s["team"]} vs {s["gegner"]} {s["ergebnis"]}\n')
-
-print("Dateien erstellt!")
-
-
-
-
-
-
+print("Spielplan erstellt")
