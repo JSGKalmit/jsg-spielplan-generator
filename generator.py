@@ -36,3 +36,26 @@ with open("output/spielplan.txt","w") as f:
         f.write(f'{s["datum"]} {s["team"]} vs {s["gegner"]} {s["zeit"]} {s["ort"]}\n')
 
 print("Spielplan erstellt")
+
+from PIL import Image, ImageDraw, ImageFont
+
+width = 1080
+height = 1920
+
+img = Image.new("RGB",(width,height),"black")
+draw = ImageDraw.Draw(img)
+
+font = ImageFont.load_default()
+
+y = 300
+
+for s in spiele:
+    text = f'{s["datum"]}  {s["team"]} vs {s["gegner"]}  {s["zeit"]}'
+    draw.text((100,y),text,fill="white",font=font)
+    y += 80
+
+os.makedirs("output", exist_ok=True)
+
+img.save("output/spielplan_story.png")
+
+print("Storygrafik erstellt")
