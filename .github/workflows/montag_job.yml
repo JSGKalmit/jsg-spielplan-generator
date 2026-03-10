@@ -20,7 +20,7 @@ jobs:
 
       - name: Abhängigkeiten installieren
         run: |
-          pip install requests pillow pandas
+          pip install pillow requests beautifulsoup4
 
       - name: Generator starten
         run: |
