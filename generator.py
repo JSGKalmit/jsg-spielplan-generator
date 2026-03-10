@@ -3,6 +3,8 @@ import requests
 import datetime
 from PIL import Image, ImageDraw, ImageFont
 
+os.makedirs ("output", exist_ok=True)
+
 VEREIN_ID="00ES8GNBC800007OVV0AG08LVUPGND5I"
 
 WIDTH=1080
