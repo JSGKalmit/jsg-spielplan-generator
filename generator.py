@@ -1,8 +1,12 @@
 import os
+import datetime
+import requests
+from bs4 import BeautifulSoup
 from PIL import Image, ImageDraw, ImageFont
 
-# Output Ordner
 os.makedirs("output", exist_ok=True)
+
+URL = "https://www.fussball.de/verein/tus-1920-maikammer-suedwest/-/id/00ES8GNBC800007OVV0AG08LVUPGND5I#!/"
 
 WIDTH = 1080
 HEIGHT = 1920
@@ -10,36 +14,116 @@ MAX_SPIELE = 6
 
 font = ImageFont.load_default()
 
-spiele = [
-("09.03", "JSG C vs SEEBACH", "18:30", "ST.MARTIN"), ("10.03", "JSG D vs EDENKOBEN", "17:30", "EDENKOBEN"), ("11.03", "JSG E1 vs HAMBACH", "11:00", "HAMBACH"), ("12.03", "JSG E2 vs ALTDORF", "11:00", "ALTDORF"), ("13.03", "JSG B vs SPEYER", "13:30", "SPEYER"), ("14.03", "JSG A vs LANDAU", "16:00", "LANDAU"), ("15.03", "JSG G vs HASSLOCH", "09:00", "HASSLOCH") ]
+def roman_to_number(name):
+    return name.replace(" II"," 2").replace(" III"," 3").replace(" IV"," 4")
 
-pages = [spiele[i:i+MAX_SPIELE] for i in range(0, len(spiele), MAX_SPIELE)]
+def shorten_opponent(name):
 
-index = 1
+    if "JSG" in name:
+        part = name.split("JSG")[-1]
+        return "JSG " + roman_to_number(part).strip()
 
-for page in pages:
+    name = name.replace(" e.V.","")
+    name = roman_to_number(name)
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), "black")
-    draw = ImageDraw.Draw(img)
+    return name.strip()
 
-    y = 300
-    toggle = True
+def shorten_place(place):
+    return place.split(" ")[0]
 
-    for datum, teams, zeit, ort in page:
+def get_week_dates(offset=0):
 
-        bg = (255,255,255) if toggle else (212,175,55)
+    today = datetime.date.today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    monday += datetime.timedelta(days=offset)
 
-        draw.rectangle((80, y-20, 1000, y+60), fill=bg)
+    sunday = monday + datetime.timedelta(days=6)
 
-        text = f"{datum}  {teams}  {zeit}  {ort}"
+    return monday, sunday
 
-        draw.text((100, y), text, fill="black", font=font)
+def load_games():
 
-        toggle = not toggle
-        y += 130
+    r = requests.get(URL)
+    soup = BeautifulSoup(r.text,"html.parser")
 
-    img.save(f"output/{index:02d}_spielplan.png")
+    games = []
 
-    index += 1
+    for row in soup.select("tr"):
 
-print("Spielplan erstellt")
+        text = row.get_text(" ",strip=True)
+
+        if ":" not in text:
+            continue
+
+        parts = text.split()
+
+        try:
+            datum = parts[0]
+            zeit = parts[1]
+
+            heim = parts[2] + " " + parts[3]
+            gast = parts[4] + " " + parts[5]
+
+            ort = parts[-1]
+
+            heim = shorten_opponent(heim)
+            gast = shorten_opponent(gast)
+
+            ort = shorten_place(ort)
+
+            games.append((datum,f"{heim} – {gast}",zeit,ort))
+
+        except:
+            pass
+
+    return games
+
+def create_story(games,start,end,prefix):
+
+    pages = [games[i:i+MAX_SPIELE] for i in range(0,len(games),MAX_SPIELE)]
+
+    index = 1
+
+    for page in pages:
+
+        img = Image.new("RGB",(WIDTH,HEIGHT),"black")
+        draw = ImageDraw.Draw(img)
+
+        title = f"{prefix} {start.strftime('%d.%m')} - {end.strftime('%d.%m')}"
+
+        draw.text((120,150),title,fill="white",font=font)
+
+        y = 350
+        toggle = True
+
+        for datum,teams,zeit,ort in page:
+
+            bg = (255,255,255) if toggle else (212,175,55)
+
+            draw.rectangle((80,y-20,1000,y+60),fill=bg)
+
+            text = f"{datum}  {teams}  {zeit}  {ort}"
+
+            draw.text((100,y),text,fill="black",font=font)
+
+            toggle = not toggle
+            y += 130
+
+        img.save(f"output/{index:02d}_{prefix}.png")
+
+        index += 1
+
+
+# Spielplan aktuelle Woche
+start,end = get_week_dates(0)
+games = load_games()
+
+create_story(games,start,end,"spielplan")
+
+# Ergebnisse letzte Woche
+start,end = get_week_dates(-7)
+
+create_story(games,start,end,"ergebnisse")
+
+print("Generator fertig")
+
