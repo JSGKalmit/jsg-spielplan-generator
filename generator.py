@@ -43,8 +43,14 @@ def get_week_dates(offset=0):
 
 def load_games():
 
+def load_games():
+
     r = requests.get(URL)
     soup = BeautifulSoup(r.text,"html.parser")
+
+    today = datetime.date.today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    sunday = monday + datetime.timedelta(days=6)
 
     games = []
 
@@ -55,11 +61,24 @@ def load_games():
         if ":" not in text:
             continue
 
+        if "Herren" in text:
+            continue
+
+        if not any(j in text for j in ["A-Junioren","B-Junioren","C-Junioren","D-Junioren","E-Junioren","F-Junioren","G-Junioren"]):
+            continue
+
         parts = text.split()
 
         try:
+
             datum = parts[0]
             zeit = parts[1]
+
+            tag,monat,jahr = datum.split(".")
+            datum_obj = datetime.date(int(jahr),int(monat),int(tag))
+
+            if datum_obj < monday or datum_obj > sunday:
+                continue
 
             heim = parts[2] + " " + parts[3]
             gast = parts[4] + " " + parts[5]
